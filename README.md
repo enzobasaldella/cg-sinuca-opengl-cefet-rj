@@ -4,6 +4,10 @@ Aplicação interativa em C que representa uma mesa de sinuca 3D com OpenGL. O
 projeto foi desenvolvido para o trabalho final da disciplina de Computação Gráfica
 do CEFET/RJ, utilizando apenas conceitos apresentados ao longo das aulas.
 
+> [!NOTE]
+> Este é um projeto acadêmico. A física foi simplificada de propósito para priorizar
+> os conceitos de computação gráfica trabalhados na disciplina.
+
 A cena contém a mesa, dezesseis bolas, seis caçapas, taco, iluminação e câmera
 virtual. O jogador seleciona a bola branca com o mouse, define a direção e a força
 da tacada e acompanha a animação das colisões.
