@@ -1,0 +1,12 @@
+# Local executable and object files
+/sinuca
+*.o
+
+# Course material
+*.pdf
+
+# Editors and operating systems
+/.vscode/
+/.idea/
+.DS_Store
+Thumbs.db
