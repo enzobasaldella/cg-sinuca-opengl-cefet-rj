@@ -1,4 +1,4 @@
-# Mesa de Sinuca 3D — Computação Gráfica (CEFET/RJ)
+# Mesa de Sinuca 3D — Computação Gráfica
 
 Aplicação interativa em C que representa uma mesa de sinuca 3D com OpenGL. O
 projeto foi desenvolvido para o trabalho final da disciplina de Computação Gráfica
