@@ -24,8 +24,8 @@
 #define PASSO_ANGULO_TACO    2.5f
 #define PASSO_IMPACTO         0.01f
 #define DESVIO_MAXIMO_IMPACTO (0.65f * RAIO_BOLA)
-#define DURACAO_CARGA_TACADA 2000
-#define CURVA_CARGA_TACADA 1.6f
+#define DURACAO_CARGA_TACADA 1500
+#define CURVA_CARGA_TACADA 2.3f
 
 // Parâmetros da animação e colisão.
 #define NUM_BOLAS            16
