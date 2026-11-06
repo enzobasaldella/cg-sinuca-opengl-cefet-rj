@@ -22,9 +22,10 @@
 #define DISTANCIA_MIN_TACO   0.02f // Quase encostado na bola branca.
 #define DISTANCIA_MAX_TACO   0.90f
 #define PASSO_ANGULO_TACO    2.5f
-#define PASSO_DISTANCIA_TACO 0.05f
 #define PASSO_IMPACTO         0.01f
 #define DESVIO_MAXIMO_IMPACTO (0.65f * RAIO_BOLA)
+#define DURACAO_CARGA_TACADA 2000
+#define CURVA_CARGA_TACADA 1.6f
 
 // Parâmetros da animação e colisão.
 #define NUM_BOLAS            16
@@ -63,6 +64,11 @@ float distanciaTaco = 0.20f;
 int bolaEmMovimento = 0;
 int bolaBrancaSelecionada = 0;
 float desvioImpacto = 0.0f;
+int carregandoTacada = 0;
+int inicioCargaTacada = 0;
+float forcaTacada = 0.0f;
+int larguraJanela = 900;
+int alturaJanela = 600;
 
 // Uma maneira prática de desenhar uma peça retangular centralizada.
 void Caixa(float x, float y, float z, float comprimento, float altura, float largura, float r, float g, float b) 
@@ -209,6 +215,72 @@ void DesenhaSelecaoBranca(void)
 
     glLineWidth(1.0f);
     glEnable(GL_LIGHTING);
+}
+
+// Desenha a barra 2D que mostra a força escolhida enquanto o espaço está pressionado.
+void DesenhaBarraForca(void)
+{
+    float larguraBarra = 360.0f;
+    float alturaBarra = 26.0f;
+    float x = (larguraJanela - larguraBarra) / 2.0f;
+    float y = 45.0f;
+    float marcadorX = x + forcaTacada * larguraBarra;
+
+    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LINE_BIT);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0.0, larguraJanela, 0.0, alturaJanela);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    // Azul no início, amarelo no meio e vermelho escuro no final da barra.
+    glBegin(GL_QUADS);
+        glColor3f(0.25f, 0.75f, 1.0f);
+        glVertex2f(x, y);
+        glColor3f(1.0f, 0.72f, 0.08f);
+        glVertex2f(x + larguraBarra * 0.65f, y);
+        glVertex2f(x + larguraBarra * 0.65f, y + alturaBarra);
+        glColor3f(0.25f, 0.75f, 1.0f);
+        glVertex2f(x, y + alturaBarra);
+
+        glColor3f(1.0f, 0.72f, 0.08f);
+        glVertex2f(x + larguraBarra * 0.65f, y);
+        glColor3f(0.48f, 0.02f, 0.02f);
+        glVertex2f(x + larguraBarra, y);
+        glVertex2f(x + larguraBarra, y + alturaBarra);
+        glColor3f(1.0f, 0.72f, 0.08f);
+        glVertex2f(x + larguraBarra * 0.65f, y + alturaBarra);
+    glEnd();
+
+    // Contorno e marcador branco indicam a força no instante atual.
+    glColor3f(0.08f, 0.08f, 0.08f);
+    glLineWidth(2.0f);
+    glBegin(GL_LINE_LOOP);
+        glVertex2f(x, y);
+        glVertex2f(x + larguraBarra, y);
+        glVertex2f(x + larguraBarra, y + alturaBarra);
+        glVertex2f(x, y + alturaBarra);
+    glEnd();
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+        glVertex2f(marcadorX, y - 5.0f);
+        glVertex2f(marcadorX, y + alturaBarra + 5.0f);
+    glEnd();
+
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopAttrib();
 }
 
 // Desenha uma caçapa como um círculo escuro sobre o tampo.
@@ -392,6 +464,8 @@ void Desenha(void)
     {
         DesenhaTaco();
     }
+    if (carregandoTacada == 1)
+        DesenhaBarraForca();
 
     glutSwapBuffers(); // Troca o buffer desenhado pelo que será exibido.
 }
@@ -399,6 +473,8 @@ void Desenha(void)
 // Função chamada quando a janela é redimensionada.
 void Redimensiona(int largura, int altura)
 {
+    larguraJanela = largura;
+    alturaJanela = altura;
     ConfiguraProjecao(largura, altura); // Atualiza a projeção quando a janela muda de tamanho.
 }
 
@@ -414,7 +490,7 @@ void SelecionaBolaBranca(int botao, int estado, int x, int y)
     GLdouble pontoX, pontoZ;
     float dx, dz;
 
-    if (botao != GLUT_LEFT_BUTTON || estado != GLUT_DOWN || bolaEmMovimento == 1)
+    if (botao != GLUT_LEFT_BUTTON || estado != GLUT_DOWN || bolaEmMovimento == 1 || carregandoTacada == 1)
         return;
 
     glGetIntegerv(GL_VIEWPORT, viewport);
@@ -451,16 +527,18 @@ void ReiniciaPartida(void)
     desvioImpacto = 0.0f;
     bolaEmMovimento = 0;
     bolaBrancaSelecionada = 0;
+    carregandoTacada = 0;
+    forcaTacada = 0.0f;
     AtualizaTitulo();
 }
 
-// Controla a direção e a distância do taco com as setas do teclado.
+// Controla somente a direção do taco com as setas laterais do teclado.
 void TeclasEspeciais(int tecla, int x, int y)
 {
     (void)x;
     (void)y;
 
-    if (bolaEmMovimento == 1 || bolaBrancaSelecionada == 0)
+    if (bolaEmMovimento == 1 || bolaBrancaSelecionada == 0 || carregandoTacada == 1)
         return;
 
     switch (tecla)
@@ -477,17 +555,6 @@ void TeclasEspeciais(int tecla, int x, int y)
                 anguloTaco -= 360.0f;
             break;
 
-        case GLUT_KEY_UP:
-            distanciaTaco -= PASSO_DISTANCIA_TACO; // Aproxima a ponta e reduz a força.
-            if (distanciaTaco < DISTANCIA_MIN_TACO)
-                distanciaTaco = DISTANCIA_MIN_TACO;
-            break;
-
-        case GLUT_KEY_DOWN:
-            distanciaTaco += PASSO_DISTANCIA_TACO; // Afasta a ponta e aumenta a força.
-            if (distanciaTaco > DISTANCIA_MAX_TACO)
-                distanciaTaco = DISTANCIA_MAX_TACO;
-            break;
     }
 
     glutPostRedisplay(); // Atualiza a posição do taco na janela.
@@ -585,7 +652,24 @@ void ColideBorda(int indice)
     }
 }
 
-// Atualiza posição, atrito e colisões das bolas a cada 16 milissegundos.
+// Atualiza a força, fazendo o taco ir do mínimo ao máximo e retornar continuamente.
+void AtualizaForcaTacada(void)
+{
+    int tempoDecorrido = glutGet(GLUT_ELAPSED_TIME) - inicioCargaTacada;
+    int tempoNoCiclo = tempoDecorrido % (2 * DURACAO_CARGA_TACADA);
+    float progresso;
+
+    if (tempoNoCiclo <= DURACAO_CARGA_TACADA)
+        progresso = (float)tempoNoCiclo / DURACAO_CARGA_TACADA;
+    else
+        progresso = 1.0f - (float)(tempoNoCiclo - DURACAO_CARGA_TACADA) / DURACAO_CARGA_TACADA;
+
+    // A potência acelera perto do máximo, deixando o trecho vermelho mais difícil.
+    forcaTacada = powf(progresso, CURVA_CARGA_TACADA);
+    distanciaTaco = DISTANCIA_MIN_TACO + forcaTacada * (DISTANCIA_MAX_TACO - DISTANCIA_MIN_TACO);
+}
+
+// Atualiza posição, atrito, colisões e a barra da tacada a cada 16 milissegundos.
 void AtualizaBolas(int valor)
 {
     int i;
@@ -593,6 +677,9 @@ void AtualizaBolas(int valor)
     int algumaBolaEmMovimento = 0;
 
     (void)valor; // A GLUT exige esse parâmetro, mas não precisamos dele.
+
+    if (carregandoTacada == 1)
+        AtualizaForcaTacada();
 
     // Só calculamos física enquanto ao menos uma bola estiver em movimento.
     if (bolaEmMovimento == 1)
@@ -643,7 +730,7 @@ void AtualizaBolas(int valor)
     glutTimerFunc(INTERVALO_ANIMACAO, AtualizaBolas, 0); // Agenda a próxima atualização.
 }
 
-// Controla os ângulos e a distância da câmera virtual.
+// Controla a câmera virtual, a força da tacada e o ponto de impacto.
 void Teclado(unsigned char tecla, int x, int y)
 {
     (void)x; // Posição horizontal do mouse, não usada neste momento.
@@ -653,12 +740,18 @@ void Teclado(unsigned char tecla, int x, int y)
     switch (tecla)
     {
         case ' ':
-            AtiraBolaBranca(); // Executa a tacada com a força escolhida.
+            if (bolaEmMovimento == 0 && bolaBrancaSelecionada == 1 && carregandoTacada == 0)
+            {
+                carregandoTacada = 1;
+                inicioCargaTacada = glutGet(GLUT_ELAPSED_TIME);
+                forcaTacada = 0.0f;
+                distanciaTaco = DISTANCIA_MIN_TACO;
+            }
             break;
 
         case 'j':
         case 'J':
-            if (bolaEmMovimento == 0 && bolaBrancaSelecionada == 1 && desvioImpacto > -DESVIO_MAXIMO_IMPACTO)
+            if (bolaEmMovimento == 0 && bolaBrancaSelecionada == 1 && carregandoTacada == 0 && desvioImpacto > -DESVIO_MAXIMO_IMPACTO)
             {
                 desvioImpacto -= PASSO_IMPACTO; // Move o impacto para a esquerda do taco.
                 if (desvioImpacto < -DESVIO_MAXIMO_IMPACTO)
@@ -668,7 +761,7 @@ void Teclado(unsigned char tecla, int x, int y)
 
         case 'l':
         case 'L':
-            if (bolaEmMovimento == 0 && bolaBrancaSelecionada == 1 && desvioImpacto < DESVIO_MAXIMO_IMPACTO)
+            if (bolaEmMovimento == 0 && bolaBrancaSelecionada == 1 && carregandoTacada == 0 && desvioImpacto < DESVIO_MAXIMO_IMPACTO)
             {
                 desvioImpacto += PASSO_IMPACTO; // Move o impacto para a direita do taco.
                 if (desvioImpacto > DESVIO_MAXIMO_IMPACTO)
@@ -678,7 +771,8 @@ void Teclado(unsigned char tecla, int x, int y)
 
         case 'k':
         case 'K':
-            desvioImpacto = 0.0f; // Retorna o impacto para o centro da bola.
+            if (carregandoTacada == 0)
+                desvioImpacto = 0.0f; // Retorna o impacto para o centro da bola.
             break;
 
         case 't':
@@ -732,6 +826,21 @@ void Teclado(unsigned char tecla, int x, int y)
     glutPostRedisplay(); // Pede para a janela desenhar a cena novamente.
 }
 
+// Executa a tacada quando a tecla espaço deixa de estar pressionada.
+void TeclaSolta(unsigned char tecla, int x, int y)
+{
+    (void)x;
+    (void)y;
+
+    if (tecla == ' ' && carregandoTacada == 1)
+    {
+        carregandoTacada = 0;
+        AtiraBolaBranca();
+    }
+
+    glutPostRedisplay();
+}
+
 // Função principal do programa.
 int main(int argc, char **argv)
 {
@@ -746,6 +855,7 @@ int main(int argc, char **argv)
     glutDisplayFunc(Desenha); // Desenhar!
     glutReshapeFunc(Redimensiona); // Redimensionar a janela.
     glutKeyboardFunc(Teclado); // Controlar a câmera com o teclado.
+    glutKeyboardUpFunc(TeclaSolta); // Executar a tacada quando o espaço é solto.
     glutSpecialFunc(TeclasEspeciais); // Controlar o taco com as setas.
     glutMouseFunc(SelecionaBolaBranca); // Selecionar a bola branca com o mouse.
     InicializaBolas(); // Define as posições iniciais das bolas.
