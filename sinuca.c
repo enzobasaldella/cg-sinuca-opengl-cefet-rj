@@ -848,6 +848,7 @@ int main(int argc, char **argv)
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH); // Buffer duplo, cores RGB e Z-Buffer.
     glutInitWindowSize(900, 600); 
     glutCreateWindow("Sinuca 3D"); 
+    glutSetKeyRepeat(GLUT_KEY_REPEAT_OFF); // Evita que a repetição do teclado pare a carga ao segurar espaço.
 
     glClearColor(0.55f, 0.55f, 0.55f, 1.0f); // Cor de fundo meio cinza.
     glEnable(GL_DEPTH_TEST); // Ativa o teste de profundidade.
