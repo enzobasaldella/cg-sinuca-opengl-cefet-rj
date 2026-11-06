@@ -21,11 +21,11 @@
 // Parâmetros da mira e da força da tacada.
 #define DISTANCIA_MIN_TACO   0.02f // Quase encostado na bola branca.
 #define DISTANCIA_MAX_TACO   0.90f
-#define PASSO_ANGULO_TACO    2.5f
 #define PASSO_IMPACTO         0.01f
 #define DESVIO_MAXIMO_IMPACTO (0.65f * RAIO_BOLA)
 #define DURACAO_CARGA_TACADA 1500
 #define CURVA_CARGA_TACADA 2.3f
+#define PASSO_CONTINUO_TACO 1.0f
 
 // Parâmetros da animação e colisão.
 #define NUM_BOLAS            16
@@ -39,8 +39,7 @@
 #define INTERVALO_ANIMACAO   16
 
 // Parâmetros da câmera virtual (ajustando a sensibilidade da movimentação da câmera):
-#define PASSO_ANGULO 4.0f
-#define PASSO_ZOOM   0.40f
+#define PASSO_CONTINUO_CAMERA 1.2f
 #define PI           3.14159265f
 // Posição inicial da câmera virtual pensando na primeira tacada!
 float anguloHorizontal = -90.0f; 
@@ -69,6 +68,14 @@ int inicioCargaTacada = 0;
 float forcaTacada = 0.0f;
 int larguraJanela = 900;
 int alturaJanela = 600;
+int giraTacoEsquerda = 0;
+int giraTacoDireita = 0;
+int cameraEsquerda = 0;
+int cameraDireita = 0;
+int cameraCima = 0;
+int cameraBaixo = 0;
+int cameraAproxima = 0;
+int cameraAfasta = 0;
 
 // Uma maneira prática de desenhar uma peça retangular centralizada.
 void Caixa(float x, float y, float z, float comprimento, float altura, float largura, float r, float g, float b) 
@@ -532,7 +539,7 @@ void ReiniciaPartida(void)
     AtualizaTitulo();
 }
 
-// Controla somente a direção do taco com as setas laterais do teclado.
+// Registra quando uma seta lateral começa a controlar a direção do taco.
 void TeclasEspeciais(int tecla, int x, int y)
 {
     (void)x;
@@ -544,20 +551,28 @@ void TeclasEspeciais(int tecla, int x, int y)
     switch (tecla)
     {
         case GLUT_KEY_LEFT:
-            anguloTaco -= PASSO_ANGULO_TACO; // Gira a mira para a esquerda.
-            if (anguloTaco < 0.0f)
-                anguloTaco += 360.0f;
+            giraTacoEsquerda = 1;
             break;
 
         case GLUT_KEY_RIGHT:
-            anguloTaco += PASSO_ANGULO_TACO; // Gira a mira para a direita.
-            if (anguloTaco >= 360.0f)
-                anguloTaco -= 360.0f;
+            giraTacoDireita = 1;
             break;
 
     }
 
     glutPostRedisplay(); // Atualiza a posição do taco na janela.
+}
+
+// Para o movimento do taco quando uma seta lateral é solta.
+void TeclaEspecialSolta(int tecla, int x, int y)
+{
+    (void)x;
+    (void)y;
+
+    if (tecla == GLUT_KEY_LEFT)
+        giraTacoEsquerda = 0;
+    if (tecla == GLUT_KEY_RIGHT)
+        giraTacoDireita = 0;
 }
 
 // Atira a bola branca na direção do taco e com a força escolhida.
@@ -669,6 +684,37 @@ void AtualizaForcaTacada(void)
     distanciaTaco = DISTANCIA_MIN_TACO + forcaTacada * (DISTANCIA_MAX_TACO - DISTANCIA_MIN_TACO);
 }
 
+// Move a câmera e a mira enquanto suas teclas correspondentes permanecem pressionadas.
+void AtualizaControlesContinuos(void)
+{
+    if (cameraEsquerda == 1)
+        anguloHorizontal -= PASSO_CONTINUO_CAMERA;
+    if (cameraDireita == 1)
+        anguloHorizontal += PASSO_CONTINUO_CAMERA;
+
+    if (cameraCima == 1 && anguloVertical < 75.0f)
+        anguloVertical += PASSO_CONTINUO_CAMERA;
+    if (cameraBaixo == 1 && anguloVertical > 5.0f)
+        anguloVertical -= PASSO_CONTINUO_CAMERA;
+    if (cameraAproxima == 1 && distanciaCamera > 4.5f)
+        distanciaCamera -= PASSO_CONTINUO_CAMERA * 0.10f;
+    if (cameraAfasta == 1 && distanciaCamera < 16.0f)
+        distanciaCamera += PASSO_CONTINUO_CAMERA * 0.10f;
+
+    if (bolaEmMovimento == 0 && bolaBrancaSelecionada == 1 && carregandoTacada == 0)
+    {
+        if (giraTacoEsquerda == 1)
+            anguloTaco -= PASSO_CONTINUO_TACO;
+        if (giraTacoDireita == 1)
+            anguloTaco += PASSO_CONTINUO_TACO;
+
+        if (anguloTaco < 0.0f)
+            anguloTaco += 360.0f;
+        if (anguloTaco >= 360.0f)
+            anguloTaco -= 360.0f;
+    }
+}
+
 // Atualiza posição, atrito, colisões e a barra da tacada a cada 16 milissegundos.
 void AtualizaBolas(int valor)
 {
@@ -680,6 +726,7 @@ void AtualizaBolas(int valor)
 
     if (carregandoTacada == 1)
         AtualizaForcaTacada();
+    AtualizaControlesContinuos();
 
     // Só calculamos física enquanto ao menos uma bola estiver em movimento.
     if (bolaEmMovimento == 1)
@@ -782,36 +829,32 @@ void Teclado(unsigned char tecla, int x, int y)
 
         case 'a':
         case 'A':
-            anguloHorizontal -= PASSO_ANGULO; // Gira a câmera para a esquerda (negativo).
+            cameraEsquerda = 1;
             break;
 
         case 'd':
         case 'D':
-            anguloHorizontal += PASSO_ANGULO; // Gira a câmera para a direita (positivo).
+            cameraDireita = 1;
             break;
 
         case 'w':
         case 'W':
-            if (anguloVertical < 75.0f)
-                anguloVertical += PASSO_ANGULO; // Eleva a câmera (positivo).
+            cameraCima = 1;
             break;
 
         case 's':
         case 'S':
-            if (anguloVertical > 5.0f)
-                anguloVertical -= PASSO_ANGULO; // Abaixa a câmera (negativo).
+            cameraBaixo = 1;
             break;
 
         case 'e':
         case 'E':
-            if (distanciaCamera > 4.5f)
-                distanciaCamera -= PASSO_ZOOM; // Aproxima a câmera (negativo).
+            cameraAproxima = 1;
             break;
 
         case 'q':
         case 'Q':
-            if (distanciaCamera < 16.0f)
-                distanciaCamera += PASSO_ZOOM; // Afasta a câmera (positivo).
+            cameraAfasta = 1;
             break;
 
         case 'r':
@@ -826,16 +869,51 @@ void Teclado(unsigned char tecla, int x, int y)
     glutPostRedisplay(); // Pede para a janela desenhar a cena novamente.
 }
 
-// Executa a tacada quando a tecla espaço deixa de estar pressionada.
+// Trata a soltura das teclas comuns e executa a tacada ao soltar espaço.
 void TeclaSolta(unsigned char tecla, int x, int y)
 {
     (void)x;
     (void)y;
 
-    if (tecla == ' ' && carregandoTacada == 1)
+    switch (tecla)
     {
-        carregandoTacada = 0;
-        AtiraBolaBranca();
+        case 'a':
+        case 'A':
+            cameraEsquerda = 0;
+            break;
+
+        case 'd':
+        case 'D':
+            cameraDireita = 0;
+            break;
+
+        case 'w':
+        case 'W':
+            cameraCima = 0;
+            break;
+
+        case 's':
+        case 'S':
+            cameraBaixo = 0;
+            break;
+
+        case 'e':
+        case 'E':
+            cameraAproxima = 0;
+            break;
+
+        case 'q':
+        case 'Q':
+            cameraAfasta = 0;
+            break;
+
+        case ' ':
+            if (carregandoTacada == 1)
+            {
+                carregandoTacada = 0;
+                AtiraBolaBranca();
+            }
+            break;
     }
 
     glutPostRedisplay();
@@ -858,6 +936,7 @@ int main(int argc, char **argv)
     glutKeyboardFunc(Teclado); // Controlar a câmera com o teclado.
     glutKeyboardUpFunc(TeclaSolta); // Executar a tacada quando o espaço é solto.
     glutSpecialFunc(TeclasEspeciais); // Controlar o taco com as setas.
+    glutSpecialUpFunc(TeclaEspecialSolta); // Parar o taco quando a seta é solta.
     glutMouseFunc(SelecionaBolaBranca); // Selecionar a bola branca com o mouse.
     InicializaBolas(); // Define as posições iniciais das bolas.
     AtualizaTitulo(); // Mostra a pontuação inicial no título da janela.
