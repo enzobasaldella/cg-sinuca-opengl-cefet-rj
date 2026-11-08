@@ -1,27 +1,28 @@
-# Mesa de Sinuca 3D — Computação Gráfica (CEFET/RJ)
+# Mesa de Sinuca 3D — Computação Gráfica
 
 Aplicação interativa em C que representa uma mesa de sinuca 3D com OpenGL. O
 projeto foi desenvolvido para o trabalho final da disciplina de Computação Gráfica
-do CEFET/RJ, utilizando apenas conceitos apresentados ao longo das aulas.
+do CEFET/RJ. A parte gráfica usa os conceitos trabalhados nas aulas; o áudio é
+um complemento opcional.
 
-> [!NOTE]
-> Este é um projeto acadêmico. A física foi simplificada de propósito para priorizar
-> os conceitos de computação gráfica trabalhados na disciplina.
+Este é um projeto acadêmico. A física foi simplificada para priorizar os
+conceitos de computação gráfica trabalhados na disciplina.
 
-A cena contém a mesa, dezesseis bolas, seis caçapas, taco, iluminação e câmera
-virtual. O jogador seleciona a bola branca com o mouse, define a direção e a força
-da tacada e acompanha a animação das colisões.
+A cena contém mesa, dezesseis bolas, seis caçapas, taco, cenário, iluminação e
+câmera virtual. Com as bolas paradas, o jogador escolhe a direção e a força da
+tacada. A pontuação dos dois jogadores aparece nos cards da tela.
 
 ## Funcionalidades
 
 - Projeção em perspectiva e câmera virtual controlada pelo teclado;
 - Mesa, taco, bolas e caçapas modelados com primitivas do OpenGL/GLUT;
+- Cenário de boteco com piso quadriculado em tons envelhecidos, quatro paredes altas, luminária central, mesas plásticas, cadeiras, bebidas, tabuleiro de damas e duas caixas de som importadas;
 - Iluminação, normais e teste de profundidade (Z-Buffer);
-- Seleção da bola branca com o mouse, indicada por um círculo amarelo;
-- Direção, força por timing e ponto lateral de impacto configuráveis para a tacada;
+- Música de fundo em loop com OpenAL, quando as bibliotecas de áudio estão disponíveis;
+- Direção e força por timing configuráveis para a tacada;
 - Colisão entre bolas e colisão com as quatro bordas da mesa;
 - Atrito para reduzir a velocidade até as bolas pararem;
-- Detecção de bolas encaçapadas e pontuação exibida no título da janela;
+- Detecção de bolas encaçapadas e pontuação exibida nos cards da tela;
 - Reinicialização das bolas e da pontuação para começar uma nova partida.
 
 ## Tecnologias
@@ -30,63 +31,76 @@ da tacada e acompanha a animação das colisões.
 - OpenGL no modo fixo;
 - GLUT;
 - GLU;
-- GCC e a biblioteca matemática (`libm`).
+- GCC e a biblioteca matemática (`libm`);
+- OpenAL e libsndfile para o áudio opcional.
 
 ## Compilação e execução
 
-Em Debian, Ubuntu ou Linux Mint, instale as bibliotecas necessárias:
+Em Debian, Ubuntu ou Linux Mint, instale as bibliotecas gráficas:
 
 ```bash
 sudo apt install build-essential freeglut3-dev libglu1-mesa-dev
 ```
 
-Compile e execute a partir da raiz do repositório:
+Para ouvir a música, instale também `libopenal-dev` e `libsndfile1-dev`. Sem
+essas bibliotecas, o jogo compila e funciona sem áudio.
+
+Compile e execute **dentro da pasta do projeto**, para que os arquivos de
+`assets/` sejam encontrados:
 
 ```bash
-gcc -Wall -Wextra sinuca.c -o sinuca -lglut -lGLU -lGL -lm
+make
 ./sinuca
 ```
 
 ## Controles
 
-Primeiro, clique na bola branca. O círculo amarelo confirma que ela foi selecionada.
-
-| Controle | Ação |
+| Tecla | Ação |
 | --- | --- |
-| Clique esquerdo | Seleciona a bola branca. |
-| Seta esquerda / direita | Gira o taco ao redor da bola branca. |
-| Segurar Espaço | Faz o taco oscilar e mostra a barra de força. |
-| Soltar Espaço | Executa a tacada com a força indicada naquele instante. |
-| J / L | Move o ponto de impacto para a esquerda ou direita da bola. |
-| K | Retorna o ponto de impacto ao centro da bola. |
-| W / A / S / D | Move a câmera virtual ao redor da mesa. |
-| Q / E | Afasta ou aproxima a câmera. |
-| R | Retorna a câmera à posição inicial. |
-| T | Reinicia as bolas e a pontuação. |
+| Setas esquerda e direita | Giram o taco ao redor da bola branca; o giro acelera enquanto a seta é segurada. |
+| Segurar Espaço | Faz a força oscilar e mostra a barra na tela. |
+| Soltar Espaço | Dá a tacada com a força indicada naquele instante. |
+| A / D | Giram a câmera ao redor da mesa. |
+| W / S | Sobem ou descem a câmera. |
+| Q / E | Afastam a câmera até o limite das paredes ou a aproximam. |
+| R | Restaura a posição inicial da câmera. |
+| M | Liga ou desliga a música, quando o áudio está disponível. |
+| T | Reinicia as bolas, a mira e a pontuação. |
 
-## Implementação
+## Como o jogo é construído
 
-A mesa é montada a partir de cubos escalados. As bolas são esferas fornecidas pela
-GLUT e as caçapas são discos da GLU. A câmera é posicionada com `gluLookAt` e a
-cena utiliza projeção em perspectiva.
+1. `sinuca.h` reúne as medidas da mesa, os parâmetros da tacada e o estado
+   compartilhado. `sinuca.c` posiciona as 16 bolas e inicia a janela da GLUT.
+2. `desenho.c` monta a mesa com caixas, desenha bolas com esferas e caçapas com
+   discos. Depois configura a câmera com `gluLookAt`, a perspectiva e as luzes.
+3. `cenario.c` desenha o piso, as paredes e a luminária. `modelo.c` lê os OBJ do
+   mobiliário, guarda seus triângulos em listas de exibição e distribui os
+   objetos no salão.
+4. As teclas em `sinuca.c` giram a câmera e o taco. Ao segurar Espaço, a força
+   percorre a barra; ao soltar, ela vira a velocidade inicial da bola branca.
+5. O temporizador atualiza posição, colisões, caçapas e atrito. Quando as bolas
+   param, o jogo decide de quem é a vez. `audio.c` toca a música, se disponível.
 
-Ao segurar Espaço, o taco percorre continuamente a distância mínima e máxima. A
-barra de força acompanha esse movimento: ela acelera perto da região vermelha, para
-que uma tacada forte dependa de timing. Ao soltar a tecla, a distância atual é
-convertida na velocidade da bola branca.
-
-A cada intervalo de animação, o programa atualiza as posições a partir das
-velocidades das bolas, verifica colisões, aplica atrito e solicita um novo desenho
-da janela. Nas colisões entre bolas, a velocidade é transferida na direção do
-impacto. Nas bordas, a componente correspondente é invertida e perde energia.
+O arquivo [CREDITOS.md](assets/CREDITOS.md) registra a origem e a licença dos
+modelos importados.
 
 ## Estrutura
 
 ```text
 .
-├── sinuca.c    # Implementação da cena e das interações
-├── README.md   # Instruções do projeto
-└── .gitignore  # Arquivos locais que não devem ser versionados
+├── sinuca.c       # Estado, regras, física, teclado e main
+├── sinuca.h       # Medidas e dados compartilhados
+├── desenho.c      # Mesa, bolas, câmera, luz e interface
+├── cenario.c      # Piso, paredes e luminária
+├── modelo.c       # Leitura de OBJ e mobiliário do salão
+├── audio.c        # Reprodução opcional da música
+├── audio.h        # Funções públicas do áudio
+├── assets/
+│   ├── modelos/    # OBJ da mobília e das caixas de som
+│   ├── audio/      # som_bar.wav
+│   └── CREDITOS.md
+├── Makefile       # Compilação
+└── README.md      # Instruções e ordem de leitura
 ```
 
 ## Limitações acadêmicas

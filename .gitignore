@@ -1,11 +1,11 @@
-# Local executable and object files
+# Executável e arquivos compilados localmente.
 /sinuca
 *.o
 
-# Course material
+# Material da disciplina.
 *.pdf
 
-# Editors and operating systems
+# Arquivos dos editores e do sistema operacional.
 /.vscode/
 /.idea/
 .DS_Store
