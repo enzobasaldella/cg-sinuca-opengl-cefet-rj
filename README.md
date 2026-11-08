@@ -1,12 +1,7 @@
 # Mesa de Sinuca 3D — Computação Gráfica
 
-Aplicação interativa em C que representa uma mesa de sinuca 3D com OpenGL. O
-projeto foi desenvolvido para o trabalho final da disciplina de Computação Gráfica
-do CEFET/RJ. A parte gráfica usa os conceitos trabalhados nas aulas; o áudio é
-um complemento opcional.
-
-Este é um projeto acadêmico. A física foi simplificada para priorizar os
-conceitos de computação gráfica trabalhados na disciplina.
+Aplicação interativa em C que representa uma mesa de sinuca 3D com OpenGL.
+Desenvolvida como trabalho final de Computação Gráfica, com áudio opcional.
 
 A cena contém mesa, dezesseis bolas, seis caçapas, taco, cenário, iluminação e
 câmera virtual. Com as bolas paradas, o jogador escolhe a direção e a força da
