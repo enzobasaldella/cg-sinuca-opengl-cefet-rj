@@ -119,6 +119,114 @@ static void DesenhaBolas(void)
             DesenhaBola(posicaoX[i], posicaoZ[i], corR[i], corG[i], corB[i]);
 }
 
+// Informa se o taco, com essa elevação (em radianos), atravessa alguma outra bola.
+static int TacoAtravessaBola(float direcaoX, float direcaoZ, float elevacao)
+{
+    // Eixo do taco: sai do centro da bola branca em direção ao cabo (vetor unitário).
+    float eixoX = -direcaoX * cosf(elevacao);
+    float eixoY = sinf(elevacao);
+    float eixoZ = -direcaoZ * cosf(elevacao);
+    float qMin = RAIO_BOLA + distanciaTaco; // Do centro da bola branca até a ponta.
+    float qMax = qMin + COMPRIMENTO_TACO;   // Do centro da bola branca até o cabo.
+    // Distância mínima do centro de uma bola ao eixo: raio + meia diagonal da seção do taco.
+    float minima = RAIO_BOLA + ESPESSURA_TACO * 0.7071f + FOLGA_TACO_BOLA;
+    int i;
+
+    for (i = 0; i < NUM_BOLAS; i++)
+    {
+        float rx;
+        float rz;
+        float q;
+        float dx;
+        float dy;
+        float dz;
+
+        if (i == BOLA_BRANCA || bolaAtiva[i] == 0)
+            continue;
+
+        rx = posicaoX[i] - posicaoX[BOLA_BRANCA];
+        rz = posicaoZ[i] - posicaoZ[BOLA_BRANCA];
+
+        // Ponto do taco (entre a ponta e o cabo) mais próximo do centro da bola i.
+        q = rx * eixoX + rz * eixoZ;
+        if (q < qMin)
+            q = qMin;
+        if (q > qMax)
+            q = qMax;
+
+        dx = rx - q * eixoX;
+        dy = -q * eixoY;
+        dz = rz - q * eixoZ;
+
+        if (dx * dx + dy * dy + dz * dz < minima * minima)
+            return 1;
+    }
+
+    return 0;
+}
+
+// Calcula a elevação do taco (em graus) para que ele passe por cima da borda e das bolas.
+// O eixo do taco sempre passa pelo centro da bola branca; só o cabo sobe.
+static float ElevacaoTaco(float direcaoX, float direcaoZ)
+{
+    float traseiraX = -direcaoX; // Sentido em que o cabo se afasta da bola.
+    float traseiraZ = -direcaoZ;
+    float distanciaParede = 1000.0f; // Do centro da bola até a borda, ao longo do taco.
+    float distancia;
+    float qMin = RAIO_BOLA + distanciaTaco;  // Do centro da bola até a ponta.
+    float qMax = qMin + COMPRIMENTO_TACO;    // Do centro da bola até o cabo.
+    float folga = ALTURA_BORDA / 2.0f - RAIO_BOLA + FOLGA_TACO_BORDA; // Subida mínima sobre a borda.
+    // Área jogável reduzida pela meia espessura, para os cantos laterais do taco também passarem.
+    float limiteX = COMPRIMENTO_MESA / 2.0f - ESPESSURA_TACO / 2.0f;
+    float limiteZ = LARGURA_MESA / 2.0f - ESPESSURA_TACO / 2.0f;
+    float elevacao;
+    float limite;
+
+    if (traseiraX > 0.0001f)
+        distanciaParede = (limiteX - posicaoX[BOLA_BRANCA]) / traseiraX;
+    else if (traseiraX < -0.0001f)
+        distanciaParede = (limiteX + posicaoX[BOLA_BRANCA]) / -traseiraX;
+
+    if (traseiraZ > 0.0001f)
+        distancia = (limiteZ - posicaoZ[BOLA_BRANCA]) / traseiraZ;
+    else if (traseiraZ < -0.0001f)
+        distancia = (limiteZ + posicaoZ[BOLA_BRANCA]) / -traseiraZ;
+    else
+        distancia = 1000.0f;
+
+    if (distancia < distanciaParede)
+        distanciaParede = distancia;
+    if (distanciaParede < 0.01f)
+        distanciaParede = 0.01f;
+
+    // Ângulo que faz o taco cruzar a borda já acima do topo dela.
+    elevacao = atanf(folga / distanciaParede);
+
+    // Se a ponta já estaria sobre a borda, o limite passa a ser a altura da ponta.
+    limite = (folga >= qMin) ? 90.0f * PI / 180.0f : asinf(folga / qMin);
+    if (limite < elevacao)
+        elevacao = limite;
+
+    // Se o taco inteiro cabe na área jogável, não precisa subir (transição suave).
+    if (distanciaParede < qMax)
+    {
+        limite = acosf(distanciaParede / qMax);
+        if (limite < elevacao)
+            elevacao = limite;
+    }
+    else
+        elevacao = 0.0f;
+
+    // Sobe mais, em passos de 0,25 grau, até o taco passar por cima das outras bolas.
+    while (elevacao < PI / 2.0f && TacoAtravessaBola(direcaoX, direcaoZ, elevacao))
+        elevacao += 0.25f * PI / 180.0f;
+
+    if (elevacao > PI / 2.0f)
+        elevacao = PI / 2.0f;
+
+    return elevacao * 180.0f / PI;
+}
+
 // Desenha o taco atrás da bola branca, na direção escolhida.
 static void DesenhaTaco(void)
 {
@@ -126,14 +234,14 @@ static void DesenhaTaco(void)
     float anguloRad = anguloTaco * PI / 180.0f;
     float direcaoX = cosf(anguloRad);
     float direcaoZ = sinf(anguloRad);
-    // A ponta fica atrás da bola; a distância determina a força da tacada.
-    float pontaX = posicaoX[BOLA_BRANCA] - direcaoX * (RAIO_BOLA + distanciaTaco);
-    float pontaZ = posicaoZ[BOLA_BRANCA] - direcaoZ * (RAIO_BOLA + distanciaTaco);
+    float elevacao = ElevacaoTaco(direcaoX, direcaoZ);
 
     glPushMatrix();
-        glTranslatef(pontaX, ALTURA_TAMPO + RAIO_BOLA, pontaZ); // Coloca a ponta atrás da bola.
+        glTranslatef(posicaoX[BOLA_BRANCA], ALTURA_TAMPO + RAIO_BOLA, posicaoZ[BOLA_BRANCA]); // Centro da bola branca.
         glRotatef(-anguloTaco, 0.0f, 1.0f, 0.0f); // Gira o taco em torno do eixo vertical.
-        glTranslatef(-COMPRIMENTO_TACO / 2.0f, 0.0f, 0.0f); // Centraliza o taco a partir da ponta.
+        glRotatef(-elevacao, 0.0f, 0.0f, 1.0f); // Levanta o cabo para passar por cima da borda.
+        // A ponta fica atrás da bola; a distância determina a força da tacada.
+        glTranslatef(-(RAIO_BOLA + distanciaTaco + COMPRIMENTO_TACO / 2.0f), 0.0f, 0.0f);
         glScalef(COMPRIMENTO_TACO, ESPESSURA_TACO, ESPESSURA_TACO);
         glColor3f(0.65f, 0.38f, 0.15f); // Cor de madeira.
         glutSolidCube(1.0); // Representa o taco com uma caixa fina.

@@ -33,6 +33,8 @@
 #define DISTANCIA_DESCANSO_TACO 0.08f // Distância normal do taco parado.
 #define DISTANCIA_MIN_TACO   0.02f // Distância mínima da ponta até a bola branca.
 #define DISTANCIA_MAX_TACO   0.90f
+#define FOLGA_TACO_BORDA     0.03f // Folga vertical entre o taco e o topo da borda.
+#define FOLGA_TACO_BOLA      0.005f // Folga entre o taco e as outras bolas.
 #define DURACAO_CARGA_TACADA 1000
 #define CURVA_CARGA_TACADA 3.5f
 #define PASSO_CONTINUO_TACO 1.0f
