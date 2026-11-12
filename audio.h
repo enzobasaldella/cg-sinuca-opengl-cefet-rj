@@ -4,5 +4,6 @@
 void IniciaAudio(const char *arquivo);
 void ParaAudio(void);
 void AlternaMudo(void);
+int SomEstaMudo(void);
 
 #endif

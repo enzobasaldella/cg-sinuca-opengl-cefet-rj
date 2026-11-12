@@ -581,6 +581,17 @@ static void TeclaEspecialSolta(int tecla, int x, int y)
         giraTacoDireita = 0;
 }
 
+// Alterna o som quando o botão da parede recebe um clique.
+static void Mouse(int botao, int estado, int x, int y)
+{
+    if (botao != GLUT_LEFT_BUTTON || estado != GLUT_DOWN)
+        return;
+
+    if (ClicouBotaoSom(x, y))
+        AlternaMudo();
+    glutPostRedisplay();
+}
+
 // Função principal do programa.
 int main(int argc, char **argv)
 {
@@ -603,6 +614,7 @@ int main(int argc, char **argv)
     glutKeyboardUpFunc(TeclaSolta); // Executar a tacada quando o espaço é solto.
     glutSpecialFunc(TeclasEspeciais); // Controlar o taco com as setas.
     glutSpecialUpFunc(TeclaEspecialSolta); // Parar o taco quando a seta é solta.
+    glutMouseFunc(Mouse); // Clicar no botão de som na parede.
     InicializaBolas(); // Define as posições iniciais das bolas.
     glutTimerFunc(INTERVALO_ANIMACAO, AtualizaBolas, 0); // Inicia a atualização das colisões.
     glutMainLoop(); // Processa os eventos enquanto a janela estiver aberta.

@@ -1,4 +1,5 @@
 #include "sinuca.h"
+#include "audio.h"
 
 // Desenha o piso com quadrados claros e escuros alternados.
 static void DesenhaPiso(void)
@@ -115,6 +116,31 @@ void ConfiguraLuzesCenario(void)
     glLightfv(GL_LIGHT1, GL_SPECULAR, especular);
 }
 
+// Desenha o botão de som entre as caixas, claro quando o som está ligado.
+static void DesenhaBotaoSom(void)
+{
+    GLUquadric *quadric = gluNewQuadric();
+
+    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
+    glDisable(GL_LIGHTING);
+
+    Caixa(0.0f, ALTURA_BOTAO_SOM, POSICAO_PAREDE_Z - 0.10f,
+          0.65f, 0.65f, 0.10f, 0.08f, 0.08f, 0.08f); // Placa escura na parede.
+
+    glPushMatrix();
+        glTranslatef(0.0f, ALTURA_BOTAO_SOM, Z_BOTAO_SOM);
+
+        if (SomEstaMudo() == 1)
+            glColor3f(0.35f, 0.04f, 0.04f); // Vermelho escuro: som mudo.
+        else
+            glColor3f(1.0f, 0.08f, 0.08f); // Vermelho claro: som ligado.
+        gluDisk(quadric, 0.0f, 0.19f, 24, 1);
+    glPopMatrix();
+
+    glPopAttrib();
+    gluDeleteQuadric(quadric);
+}
+
 // Reúne os objetos estáticos que formam o salão de sinuca.
 void DesenhaCenario(void)
 {
@@ -122,4 +148,5 @@ void DesenhaCenario(void)
     DesenhaParedes();
     DesenhaMobiliarioImportado();
     DesenhaLampada(0.0f, 0.0f); // Luminária central sobre a sinuca.
+    DesenhaBotaoSom();
 }

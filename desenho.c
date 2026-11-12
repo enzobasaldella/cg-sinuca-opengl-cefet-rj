@@ -335,37 +335,7 @@ static void DesenhaTexto2D(float x, float y, const char *texto)
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, texto[i]);
 }
 
-// Mostra os controles em uma caixa preta abaixo do placar azul.
-static void DesenhaComandos(float x, float topo, float largura)
-{
-    const char *comandos[] = {
-        "CONTROLES",
-        "SETAS: MIRA",
-        "SEGURE ESPACO",
-        "SOLTE: TACADA",
-        "A/D: GIRAR",
-        "W/S: ALTURA",
-        "Q/E: ZOOM",
-        "R: CAMERA",
-        "T: REINICIAR",
-        "M: SOM"
-    };
-    int i;
-
-    glColor3f(0.04f, 0.04f, 0.04f);
-    glBegin(GL_QUADS);
-        glVertex2f(x, topo - 162.0f);
-        glVertex2f(x + largura, topo - 162.0f);
-        glVertex2f(x + largura, topo);
-        glVertex2f(x, topo);
-    glEnd();
-
-    glColor3f(1.0f, 1.0f, 1.0f);
-    for (i = 0; i < 10; i++)
-        DesenhaTexto2D(x + 8.0f, topo - 18.0f - i * 15.0f, comandos[i]);
-}
-
-// Desenha os placares, destaca quem está na vez e mostra os comandos.
+// Desenha os placares e destaca quem está na vez.
 static void DesenhaPlacar(void)
 {
     int jogador;
@@ -418,8 +388,6 @@ static void DesenhaPlacar(void)
 
         DesenhaTexto2D(x + 10.0f, y + 10.0f, texto);
     }
-
-    DesenhaComandos(larguraJanela - larguraPlaca - 12.0f, y - 8.0f, larguraPlaca);
 
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
@@ -486,6 +454,45 @@ static void ConfiguraCamera(void)
     gluLookAt(cameraX, cameraY, cameraZ,
               0.0, 1.0, 0.0,
               0.0, 1.0, 0.0);
+}
+
+// Converte o clique em um raio e testa se ele alcança o botão na parede.
+int ClicouBotaoSom(int x, int y)
+{
+    GLdouble modelo[16];
+    GLdouble projecao[16];
+    GLint janela[4];
+    GLdouble pertoX, pertoY, pertoZ;
+    GLdouble longeX, longeY, longeZ;
+    GLdouble fator, pontoX, pontoY;
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+        glLoadIdentity();
+        ConfiguraCamera();
+        glGetDoublev(GL_MODELVIEW_MATRIX, modelo);
+    glPopMatrix();
+    glGetDoublev(GL_PROJECTION_MATRIX, projecao);
+    glGetIntegerv(GL_VIEWPORT, janela);
+
+    // O mouse informa Y a partir do topo; o OpenGL conta a partir de baixo.
+    if (!gluUnProject(x, janela[3] - y, 0.0, modelo, projecao, janela,
+                      &pertoX, &pertoY, &pertoZ) ||
+        !gluUnProject(x, janela[3] - y, 1.0, modelo, projecao, janela,
+                      &longeX, &longeY, &longeZ))
+        return 0;
+
+    // Encontra onde o raio cruza o plano da frente do botão.
+    if (fabs(longeZ - pertoZ) < 0.000001)
+        return 0;
+    fator = (Z_BOTAO_SOM - pertoZ) / (longeZ - pertoZ);
+    if (fator < 0.0 || fator > 1.0)
+        return 0;
+
+    pontoX = pertoX + fator * (longeX - pertoX);
+    pontoY = pertoY + fator * (longeY - pertoY);
+    return pontoX * pontoX + (pontoY - ALTURA_BOTAO_SOM) * (pontoY - ALTURA_BOTAO_SOM)
+           <= RAIO_BOTAO_SOM * RAIO_BOTAO_SOM;
 }
 
 // Função de desenho da cena.

@@ -14,6 +14,7 @@ tacada. A pontuação dos dois jogadores aparece nos cards da tela.
 - Cenário de boteco com piso quadriculado em tons envelhecidos, quatro paredes altas, luminária central, mesas plásticas, cadeiras, bebidas, tabuleiro de damas e duas caixas de som importadas;
 - Iluminação, normais e teste de profundidade (Z-Buffer);
 - Música de fundo em loop com OpenAL, quando as bibliotecas de áudio estão disponíveis;
+- Botão de som na parede acionado pelo mouse: vermelho claro quando ligado e escuro quando mudo;
 - Direção e força por timing configuráveis para a tacada;
 - Colisão entre bolas e colisão com as quatro bordas da mesa;
 - Atrito para reduzir a velocidade até as bolas pararem;
@@ -60,6 +61,7 @@ make
 | Q / E | Afastam a câmera até o limite das paredes ou a aproximam. |
 | R | Restaura a posição inicial da câmera. |
 | M | Liga ou desliga a música, quando o áudio está disponível. |
+| Clique no botão vermelho entre as caixas de som | Liga ou desliga a música. O botão fica claro com o som ligado e escuro quando mudo. |
 | T | Reinicia as bolas, a mira e a pontuação. |
 
 ## Como o jogo é construído
@@ -74,7 +76,8 @@ make
 4. As teclas em `sinuca.c` giram a câmera e o taco. Ao segurar Espaço, a força
    percorre a barra; ao soltar, ela vira a velocidade inicial da bola branca.
 5. O temporizador atualiza posição, colisões, caçapas e atrito. Quando as bolas
-   param, o jogo decide de quem é a vez. `audio.c` toca a música, se disponível.
+   param, o jogo decide de quem é a vez. O clique aciona o botão na parede;
+   `audio.c` toca ou silencia a música, se disponível.
 
 O arquivo [CREDITOS.md](assets/CREDITOS.md) registra a origem e a licença dos
 modelos importados.

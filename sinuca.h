@@ -28,6 +28,9 @@
 #define POSICAO_PAREDE_X      8.96f
 #define POSICAO_PAREDE_Z      6.96f
 #define ALTURA_PAREDE         12.00f
+#define ALTURA_BOTAO_SOM      2.85f
+#define RAIO_BOTAO_SOM        0.25f
+#define Z_BOTAO_SOM           (POSICAO_PAREDE_Z - 0.18f)
 
 // Parâmetros da mira e da força da tacada.
 #define DISTANCIA_DESCANSO_TACO 0.08f // Distância normal do taco parado.
@@ -104,5 +107,6 @@ void DesenhaCenario(void);
 void ConfiguraLuzesCenario(void);
 void CarregaModelos(void);
 void DesenhaMobiliarioImportado(void);
+int ClicouBotaoSom(int x, int y);
 
 #endif

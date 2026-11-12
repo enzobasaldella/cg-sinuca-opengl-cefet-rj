@@ -1,5 +1,7 @@
 #include "audio.h"
 
+static int mudo = 0;
+
 #ifdef TEM_AUDIO
 
 #include <AL/al.h>
@@ -12,7 +14,6 @@ static ALCdevice *dispositivo = NULL;
 static ALCcontext *contexto = NULL;
 static ALuint buffer = 0;
 static ALuint fonte = 0;
-static int mudo = 0;
 
 // Abre um arquivo WAV e inicia sua reprodução contínua em 50% do volume.
 void IniciaAudio(const char *arquivo)
@@ -79,10 +80,10 @@ void IniciaAudio(const char *arquivo)
 // Alterna entre o volume normal e o silêncio sem interromper a música.
 void AlternaMudo(void)
 {
+    mudo = !mudo;
     if (fonte == 0)
         return;
 
-    mudo = !mudo;
     if (mudo == 1)
         alSourcef(fonte, AL_GAIN, 0.0f);
     else
@@ -133,6 +134,13 @@ void ParaAudio(void)
 
 void AlternaMudo(void)
 {
+    mudo = !mudo;
 }
 
 #endif
+
+// Informa o estado do som para desenhar o botão na parede.
+int SomEstaMudo(void)
+{
+    return mudo;
+}
