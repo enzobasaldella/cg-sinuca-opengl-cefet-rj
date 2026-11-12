@@ -242,16 +242,32 @@ static void DesenhaMesaPlastica(float x, float z, float angulo, int vermelha)
 {
     if (vermelha)
         DesenhaModelo(&modeloMesaPlastico, x, 0.0f, z, angulo,
-                       0.72f, 0.08f, 0.06f); // Mesa vermelha.
+                       0.62f, 0.12f, 0.10f); // Vermelho de plástico gasto.
     else
         DesenhaModelo(&modeloMesaPlastico, x, 0.0f, z, angulo,
-                       0.95f, 0.78f, 0.05f); // Mesa amarela.
+                       0.78f, 0.66f, 0.18f); // Amarelo de plástico gasto.
+}
+
+// Acrescenta uma tampa metálica simples à lata importada.
+static void DesenhaTampaLata(float x, float y, float z, float raio)
+{
+    GLUquadric *quadric = gluNewQuadric();
+
+    glPushMatrix();
+        glTranslatef(x, y, z);
+        glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+        glColor3f(0.72f, 0.72f, 0.70f); // Alumínio fosco.
+        gluDisk(quadric, 0.0f, raio, 20, 1);
+    glPopMatrix();
+
+    gluDeleteQuadric(quadric);
 }
 
 // Desenha uma lata importada sobre uma das mesas do boteco.
 static void DesenhaLata(float x, float z, float r, float g, float b)
 {
     DesenhaModelo(&modeloLata, x, 1.72f, z, 0.0f, r, g, b);
+    DesenhaTampaLata(x, 2.051f, z, 0.082f);
 }
 
 // Desenha uma garrafa de cerveja importada sobre uma mesa do boteco.
@@ -261,7 +277,7 @@ static void DesenhaCerveja(float x, float z)
         glTranslatef(x, 1.92f, z);
         glScalef(1.40f, 1.40f, 1.40f);
         DesenhaModelo(&modeloCerveja, 0.0f, 0.0f, 0.0f, 0.0f,
-                       0.42f, 0.22f, 0.06f); // Garrafa marrom.
+                       0.50f, 0.29f, 0.10f); // Garrafa âmbar.
     glPopMatrix();
 }
 
@@ -272,8 +288,39 @@ static void DesenhaLataVermelha(float x, float z)
         glTranslatef(x, 1.97f, z);
         glScalef(2.00f, 2.00f, 2.00f);
         DesenhaModelo(&modeloLataVermelha, 0.0f, 0.0f, 0.0f, 0.0f,
-                       0.76f, 0.05f, 0.05f); // Lata vermelha.
+                       0.68f, 0.11f, 0.09f); // Lata vermelha.
+        DesenhaTampaLata(0.0f, 0.035f, 0.0f, 0.040f);
     glPopMatrix();
+}
+
+// Colore as casas do tabuleiro sobre a moldura de madeira importada.
+static void DesenhaCasasTabuleiro(void)
+{
+    int i;
+    int j;
+    float lado = 0.15f;
+
+    glNormal3f(0.0f, 1.0f, 0.0f);
+    glBegin(GL_QUADS);
+    for (i = 0; i < 8; i++)
+    {
+        for (j = 0; j < 8; j++)
+        {
+            float x = -0.60f + i * lado;
+            float z = -0.60f + j * lado;
+
+            if ((i + j) % 2 == 0)
+                glColor3f(0.76f, 0.69f, 0.54f); // Madeira clara.
+            else
+                glColor3f(0.28f, 0.17f, 0.09f); // Madeira escura.
+
+            glVertex3f(x, 0.020f, z);
+            glVertex3f(x, 0.020f, z + lado);
+            glVertex3f(x + lado, 0.020f, z + lado);
+            glVertex3f(x + lado, 0.020f, z);
+        }
+    }
+    glEnd();
 }
 
 // Desenha um tabuleiro de damas importado sobre uma mesa do boteco.
@@ -283,7 +330,8 @@ static void DesenhaTabuleiroDamas(float x, float z)
         glTranslatef(x, 1.76f, z);
         glScalef(0.62f, 0.62f, 0.62f);
         DesenhaModelo(&modeloDamas, 0.0f, 0.0f, 0.0f, 0.0f,
-                       0.48f, 0.24f, 0.08f); // Madeira escura.
+                       0.40f, 0.26f, 0.12f); // Moldura de madeira.
+        DesenhaCasasTabuleiro();
     glPopMatrix();
 }
 
@@ -309,9 +357,9 @@ static void DesenhaCadeiraDaMesa(int lado, float desvio, float r, float g, float
 // Agrupa uma mesa, objetos sobre o tampo e cadeiras nos lados livres.
 static void DesenhaMesaBar(float x, float z, float angulo, int tipo, int vermelha)
 {
-    float rCadeira = vermelha ? 0.72f : 0.95f;
-    float gCadeira = vermelha ? 0.08f : 0.78f;
-    float bCadeira = vermelha ? 0.06f : 0.05f;
+    float rCadeira = vermelha ? 0.62f : 0.78f;
+    float gCadeira = vermelha ? 0.12f : 0.66f;
+    float bCadeira = vermelha ? 0.10f : 0.18f;
 
     glPushMatrix();
         glTranslatef(x, 0.0f, z);
@@ -325,7 +373,7 @@ static void DesenhaMesaBar(float x, float z, float angulo, int tipo, int vermelh
         }
         else if (tipo == 1)
         {
-            DesenhaLata(0.32f, 0.20f, 0.10f, 0.36f, 0.82f); // Lata azul.
+            DesenhaLata(0.32f, 0.20f, 0.12f, 0.30f, 0.58f); // Lata azul.
             DesenhaCerveja(-0.30f, -0.18f);
         }
         else
@@ -384,8 +432,8 @@ void DesenhaMobiliarioImportado(void)
     DesenhaMesaBar( 6.30f,  4.20f, -4.0f, 0, 0);
 
     // Duas cadeiras afastadas da sinuca ocupam os espaços vazios do salão.
-    DesenhaCadeiraSolta(-0.85f,  4.65f,  35.0f, 0.72f, 0.08f, 0.06f);
-    DesenhaCadeiraSolta( 1.10f, -4.55f, -25.0f, 0.95f, 0.78f, 0.05f);
+    DesenhaCadeiraSolta(-0.85f,  4.65f,  35.0f, 0.62f, 0.12f, 0.10f);
+    DesenhaCadeiraSolta( 1.10f, -4.55f, -25.0f, 0.78f, 0.66f, 0.18f);
 
     DesenhaCaixaSom(-4.60f);
     DesenhaCaixaSom( 4.60f);

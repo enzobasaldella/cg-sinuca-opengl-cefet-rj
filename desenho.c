@@ -335,7 +335,37 @@ static void DesenhaTexto2D(float x, float y, const char *texto)
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, texto[i]);
 }
 
-// Desenha os placares dos dois jogadores e destaca quem está na vez.
+// Mostra os controles em uma caixa preta abaixo do placar azul.
+static void DesenhaComandos(float x, float topo, float largura)
+{
+    const char *comandos[] = {
+        "CONTROLES",
+        "SETAS: MIRA",
+        "SEGURE ESPACO",
+        "SOLTE: TACADA",
+        "A/D: GIRAR",
+        "W/S: ALTURA",
+        "Q/E: ZOOM",
+        "R: CAMERA",
+        "T: REINICIAR",
+        "M: SOM"
+    };
+    int i;
+
+    glColor3f(0.04f, 0.04f, 0.04f);
+    glBegin(GL_QUADS);
+        glVertex2f(x, topo - 162.0f);
+        glVertex2f(x + largura, topo - 162.0f);
+        glVertex2f(x + largura, topo);
+        glVertex2f(x, topo);
+    glEnd();
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+    for (i = 0; i < 10; i++)
+        DesenhaTexto2D(x + 8.0f, topo - 18.0f - i * 15.0f, comandos[i]);
+}
+
+// Desenha os placares, destaca quem está na vez e mostra os comandos.
 static void DesenhaPlacar(void)
 {
     int jogador;
@@ -388,6 +418,8 @@ static void DesenhaPlacar(void)
 
         DesenhaTexto2D(x + 10.0f, y + 10.0f, texto);
     }
+
+    DesenhaComandos(larguraJanela - larguraPlaca - 12.0f, y - 8.0f, larguraPlaca);
 
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
